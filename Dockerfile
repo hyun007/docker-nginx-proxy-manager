@@ -33,98 +33,98 @@ RUN \
         apache2-utils \
         logrotate \
         && \
-    # Adjust the logrotate config file.
-    sed-patch 's|^/var/log/messages|#/var/log/messages|' /etc/logrotate.conf && \
-    # Clean some uneeded stuff from mariadb.
-    rm -r \
-        /var/lib/mysql \
-        && \
-    # Clean some uneeded stuff from nginx.
-    mv /etc/nginx/fastcgi.conf /tmp/ && \
-    mv /etc/nginx/fastcgi_params /tmp/ && \
-    rm -r \
-        /var/log/nginx \
-        /var/lib/nginx \
-        /var/tmp/nginx \
-        /etc/nginx \
-        /etc/init.d/nginx \
-        /etc/logrotate.d/nginx \
-        /var/www && \
-    mkdir /etc/nginx && \
-    mv /tmp/fastcgi.conf /etc/nginx/ && \
-    mv /tmp/fastcgi_params /etc/nginx/ && \
-    ln -s /tmp/nginx /var/tmp/nginx && \
-    # nginx always tries to open /var/lib/nginx/logs/error.log before reading
-    # its configuration.  Make sure it exists.
-    mkdir -p /var/lib/nginx/logs && \
-    ln -sf /config/log/nginx/error.log /var/lib/nginx/logs/error.log && \
-    # Make sure mariadb listen on port 3306
-    sed-patch 's/^skip-networking/#skip-networking/' /etc/my.cnf.d/mariadb-server.cnf
+# Adjust the logrotate config file.
+        sed-patch 's|^/var/log/messages|#/var/log/messages|' /etc/logrotate.conf && \
+# Clean some uneeded stuff from mariadb.
+        rm -r \
+            /var/lib/mysql \
+            && \
+# Clean some uneeded stuff from nginx.
+            mv /etc/nginx/fastcgi.conf /tmp/ && \
+                mv /etc/nginx/fastcgi_params /tmp/ && \
+                rm -r \
+                /var/log/nginx \
+                /var/lib/nginx \
+                /var/tmp/nginx \
+                /etc/nginx \
+                /etc/init.d/nginx \
+                /etc/logrotate.d/nginx \
+                /var/www && \
+                mkdir /etc/nginx && \
+                mv /tmp/fastcgi.conf /etc/nginx/ && \
+                mv /tmp/fastcgi_params /etc/nginx/ && \
+                ln -s /tmp/nginx /var/tmp/nginx && \
+# nginx always tries to open /var/lib/nginx/logs/error.log before reading
+# its configuration.  Make sure it exists.
+                mkdir -p /var/lib/nginx/logs && \
+                    ln -sf /config/log/nginx/error.log /var/lib/nginx/logs/error.log && \
+# Make sure mariadb listen on port 3306
+                    sed-patch 's/^skip-networking/#skip-networking/' /etc/my.cnf.d/mariadb-server.cnf
 
 # Install Nginx Proxy Manager.
-RUN \
-    # Install packages needed by the build.
-    add-pkg --virtual build-dependencies \
-        build-base \
-        curl \
-        patch \
-        yarn \
-        git \
-        python \
-        npm \
-        bash \
-        && \
+                    RUN \
+# Install packages needed by the build.
+                    add-pkg --virtual build-dependencies \
+                        build-base \
+                        curl \
+                        patch \
+                        yarn \
+                        git \
+                        python \
+                        npm \
+                        bash \
+                        && \
 
-    # Install node-prune.
-    echo "Installing node-prune..." && \
-    curl -sfL https://install.goreleaser.com/github.com/tj/node-prune.sh | bash -s -- -b /tmp/bin && \
+# Install node-prune.
+                        echo "Installing node-prune..." && \
+                            curl -sfL https://install.goreleaser.com/github.com/tj/node-prune.sh | bash -s -- -b /tmp/bin && \
 
-    # Download the Nginx Proxy Manager package.
-    echo "Downloading Nginx Proxy Manager package..." && \
-    mkdir nginx-proxy-manager && \
-    curl -# -L ${NGINX_PROXY_MANAGER_URL} | tar xz --strip 1 -C nginx-proxy-manager && \
+# Download the Nginx Proxy Manager package.
+                            echo "Downloading Nginx Proxy Manager package..." && \
+                                mkdir nginx-proxy-manager && \
+                                curl -# -L ${NGINX_PROXY_MANAGER_URL} | tar xz --strip 1 -C nginx-proxy-manager && \
 
-    # Build Nginx Proxy Manager.
-    echo "Building Nginx Proxy Manager..." && \
-    cp -r nginx-proxy-manager /app && \
-    cd /app && \
-    yarn install && \
-    npm --cache /tmp/.npm run-script build && \
-    rm -rf node_modules && \
-    yarn install --prod && \
-    /tmp/bin/node-prune && \
-    cd /tmp && \
+# Build Nginx Proxy Manager.
+                                echo "Building Nginx Proxy Manager..." && \
+                                    cp -r nginx-proxy-manager /app && \
+                                    cd /app && \
+                                    yarn install && \
+                                    npm --cache /tmp/.npm run-script build && \
+                                    rm -rf node_modules && \
+                                    yarn install --prod && \
+                                    /tmp/bin/node-prune && \
+                                    cd /tmp && \
 
-    # Install Nginx Proxy Manager.
-    echo "Installing Nginx Proxy Manager..." && \
-    mkdir -p /opt/nginx-proxy-manager/src && \
-    cp -r /app/dist /opt/nginx-proxy-manager/ && \
-    cp -r /app/node_modules /opt/nginx-proxy-manager/ && \
-    cp -r /app/src/backend /opt/nginx-proxy-manager/src/ && \
-    cp -r /app/package.json /opt/nginx-proxy-manager/ && \
-    cp -r /app/knexfile.js /opt/nginx-proxy-manager/ && \
-    cp -r nginx-proxy-manager/rootfs/etc/nginx /etc/ && \
-    cp -r nginx-proxy-manager/rootfs/var/www /var/ && \
+# Install Nginx Proxy Manager.
+                                    echo "Installing Nginx Proxy Manager..." && \
+                                        mkdir -p /opt/nginx-proxy-manager/src && \
+                                        cp -r /app/dist /opt/nginx-proxy-manager/ && \
+                                        cp -r /app/node_modules /opt/nginx-proxy-manager/ && \
+                                        cp -r /app/src/backend /opt/nginx-proxy-manager/src/ && \
+                                        cp -r /app/package.json /opt/nginx-proxy-manager/ && \
+                                        cp -r /app/knexfile.js /opt/nginx-proxy-manager/ && \
+                                        cp -r nginx-proxy-manager/rootfs/etc/nginx /etc/ && \
+                                        cp -r nginx-proxy-manager/rootfs/var/www /var/ && \
 
-    # Change the management interface port to the unprivileged port 8181.
-    sed-patch 's|81|8181|' /opt/nginx-proxy-manager/src/backend/index.js && \
-    sed-patch 's|81|8181|' /etc/nginx/conf.d/default.conf && \
+# Change the management interface port to the unprivileged port 8181.
+    #sed-patch 's|81|8181|' /opt/nginx-proxy-manager/src/backend/index.js && \
+    #sed-patch 's|81|8181|' /etc/nginx/conf.d/default.conf && \
 
     # Change the HTTP port 80 to the unprivileged port 8080.
-    sed-patch 's|listen 80;|listen 8080;|' /etc/nginx/conf.d/default.conf && \
-    sed-patch 's|listen 80;|listen 8080;|' /opt/nginx-proxy-manager/src/backend/templates/letsencrypt-request.conf && \
-    sed-patch 's|listen 80;|listen 8080;|' /opt/nginx-proxy-manager/src/backend/templates/_listen.conf && \
-    sed-patch 's|listen 80 |listen 8080 |' /opt/nginx-proxy-manager/src/backend/templates/default.conf && \
+    #sed-patch 's|listen 80;|listen 8080;|' /etc/nginx/conf.d/default.conf && \
+    #sed-patch 's|listen 80;|listen 8080;|' /opt/nginx-proxy-manager/src/backend/templates/letsencrypt-request.conf && \
+    #sed-patch 's|listen 80;|listen 8080;|' /opt/nginx-proxy-manager/src/backend/templates/_listen.conf && \
+    #sed-patch 's|listen 80 |listen 8080 |' /opt/nginx-proxy-manager/src/backend/templates/default.conf && \
 
     # Change the HTTPs port 443 to the unprivileged port 4443.
-    sed-patch 's|listen 443 |listen 4443 |' /etc/nginx/conf.d/default.conf && \
-    sed-patch 's|listen 443 |listen 4443 |' /opt/nginx-proxy-manager/src/backend/templates/_listen.conf && \
+    #sed-patch 's|listen 443 |listen 4443 |' /etc/nginx/conf.d/default.conf && \
+    #sed-patch 's|listen 443 |listen 4443 |' /opt/nginx-proxy-manager/src/backend/templates/_listen.conf && \
 
     # Fix nginx test command line.
     sed-patch 's|-g "error_log off;"||' /opt/nginx-proxy-manager/src/backend/internal/nginx.js && \
 
     # Remove the `user` directive, since we want nginx to run as non-root.
-    sed-patch 's|user root;|#user root;|' /etc/nginx/nginx.conf && \
+    #sed-patch 's|user root;|#user root;|' /etc/nginx/nginx.conf && \
 
     # Make sure nginx loads the stream module.
     sed-patch '/daemon off;/a load_module /usr/lib/nginx/modules/ngx_stream_module.so;' /etc/nginx/nginx.conf && \
