@@ -12,7 +12,7 @@ FROM jlesage/baseimage:alpine-3.9-v2.4.2
 ARG DOCKER_IMAGE_VERSION=unknown
 
 # Define software versions.
-ARG NGINX_PROXY_MANAGER_VERSION=2.0.14
+ARG NGINX_PROXY_MANAGER_VERSION=v2.1.1
 
 # Define software download URLs.
 ARG NGINX_PROXY_MANAGER_URL=https://github.com/jc21/nginx-proxy-manager/archive/${NGINX_PROXY_MANAGER_VERSION}.tar.gz
