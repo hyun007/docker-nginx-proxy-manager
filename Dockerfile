@@ -2,7 +2,8 @@
 # nginx-proxy-manager Dockerfile
 #
 # https://github.com/jlesage/docker-nginx-proxy-manager
-#
+# 
+# hyun007 added back privileged ports
 
 # Pull base image.
 FROM jlesage/baseimage:alpine-3.9-v2.4.2
